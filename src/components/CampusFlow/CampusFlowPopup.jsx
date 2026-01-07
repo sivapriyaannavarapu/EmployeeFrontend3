@@ -12,158 +12,206 @@ const CampusFlowPopup = () => {
   const navigate = useNavigate();
 
   // -------------------- STATE --------------------
-  const [cities, setCities] = useState([]);
+  const [selectedLocation, setSelectedLocation] = useState(""); // city name (display)
+  const [selectedLocationId, setSelectedLocationId] = useState(null); // city id (API)
+
+  const [selectedBusinessType, setSelectedBusinessType] = useState(""); // businessTypeId (number/string)
+  const [selectedBusinessTypeName, setSelectedBusinessTypeName] = useState(""); // display name
+
+  const [selectedCampus, setSelectedCampus] = useState(""); // campus name (display)
+  const [selectedCampusId, setSelectedCampusId] = useState(null); // campus id (API)
+
   const [businessTypes, setBusinessTypes] = useState([]);
-  const [campuses, setCampuses] = useState([]);
+  const [loadingBusinessTypes, setLoadingBusinessTypes] = useState(false);
 
-  const [selectedLocation, setSelectedLocation] = useState("");
-  const [selectedLocationId, setSelectedLocationId] = useState(null);
+  const [cities, setCities] = useState([]); // full city objects
+  const [citiesError, setCitiesError] = useState(null);
+  const [locationList, setLocationList] = useState([]); // array of city names
 
-  const [selectedBusinessTypeName, setSelectedBusinessTypeName] = useState("");
-  const [selectedBusinessTypeId, setSelectedBusinessTypeId] = useState(null);
+  const [campuses, setCampuses] = useState([]); // full campus objects
+  const [campusList, setCampusList] = useState([]); // array of campus names
+  const [loadingCampuses, setLoadingCampuses] = useState(false);
 
-  const [selectedCampus, setSelectedCampus] = useState("");
-
-  // -------------------- FETCH LOCATIONS --------------------
+  // -------------------- API CALLS --------------------
+  // Business types (on mount)
   useEffect(() => {
-    campusFlowApi
-      .getCities()
-      .then((res) => {
-        console.log("✅ Cities:", res.data);
-        setCities(res.data || []);
-      })
-      .catch((err) => {
-        console.error("❌ Cities API error");
-        setCities([]);
-      });
-  }, []);
-
-  // -------------------- FETCH BUSINESS TYPES --------------------
-  useEffect(() => {
-    campusFlowApi
-      .getAllBusinessTypes()
-      .then((res) => {
-        console.log("✅ Business Types:", res.data);
-        setBusinessTypes(res.data || []);
-      })
-      .catch((err) => {
-        console.error("❌ Business Types API error");
+    const fetchBusinessTypes = async () => {
+      setLoadingBusinessTypes(true);
+      try {
+        const res = await campusFlowApi.getAllBusinessTypes();
+        console.log("getAllBusinessTypes - full response:", res);
+        const data = res?.data ?? [];
+        setBusinessTypes(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error("Error fetching business types:", err?.response?.data ?? err?.message ?? err);
         setBusinessTypes([]);
-      });
+      } finally {
+        setLoadingBusinessTypes(false);
+      }
+    };
+
+    fetchBusinessTypes();
   }, []);
 
-  // -------------------- FETCH CAMPUSES --------------------
-  useEffect(() => {
-    if (!selectedLocationId || !selectedBusinessTypeId) return;
+  // Cities (on mount, with retry support)
+  const fetchCities = async () => {
+    setCitiesError(null);
+    try {
+      const res = await campusFlowApi.getCities();
+      const data = res?.data ?? [];
+      setCities(Array.isArray(data) ? data : []);
+      setLocationList(Array.isArray(data) ? data.map((c) => c.name) : []);
+      console.log("Fetched cities:", data);
+    } catch (err) {
+      const serverPayload = err?.response?.data ?? err?.message ?? err;
+      console.error("Error fetching cities:", serverPayload);
+      setCities([]);
+      setLocationList([]);
+      setCitiesError("Failed to load locations. Please retry.");
+    }
+  };
 
-    campusFlowApi
-      .getCampuses(selectedLocationId, selectedBusinessTypeId)
-      .then((res) => {
-        console.log("✅ Campuses:", res.data);
-        setCampuses(res.data || []);
-      })
-      .catch((err) => {
-        console.error("❌ Campuses API error");
+  useEffect(() => {
+    fetchCities();
+  }, []);
+
+  // Campuses (when both cityId and businessTypeId are present)
+  useEffect(() => {
+    const fetchCampuses = async () => {
+      if (!selectedLocationId || !selectedBusinessType) {
         setCampuses([]);
-      });
-  }, [selectedLocationId, selectedBusinessTypeId]);
+        setCampusList([]);
+        setSelectedCampus("");
+        setSelectedCampusId(null);
+        return;
+      }
+
+      setLoadingCampuses(true);
+      try {
+        const res = await campusFlowApi.getCampuses(selectedLocationId, selectedBusinessType);
+        console.log("getCampuses - full response:", res);
+        const data = res?.data ?? [];
+        const items = Array.isArray(data) ? data : [];
+
+        setCampuses(items);
+
+        const names = items
+          .map((c) => c.cmpsName ?? c.name ?? c.campusName ?? c.campus ?? "")
+          .filter(Boolean);
+        setCampusList(names);
+      } catch (err) {
+        console.error("Error fetching campuses:", err?.response?.data ?? err?.message ?? err);
+        setCampuses([]);
+        setCampusList([]);
+      } finally {
+        setLoadingCampuses(false);
+      }
+    };
+
+    fetchCampuses();
+  }, [selectedLocationId, selectedBusinessType]);
 
   // -------------------- HANDLERS --------------------
   const handleLocationChange = (e) => {
-    const cityName = e.target.value;
-    const city = cities.find((c) => c.name === cityName);
+    const name = e.target.value;
+    setSelectedLocation(name);
 
-    console.log("📍 Selected City:", cityName, "ID:", city?.id);
+    // find and store the city id
+    const city = cities.find((c) => c.name === name);
+    setSelectedLocationId(city ? city.id ?? city.cityId ?? null : null);
 
-    setSelectedLocation(cityName);
-    setSelectedLocationId(city ? city.id : null);
-
+    // reset dependent selections
+    setSelectedBusinessType("");
     setSelectedBusinessTypeName("");
-    setSelectedBusinessTypeId(null);
     setSelectedCampus("");
+    setSelectedCampusId(null);
     setCampuses([]);
+    setCampusList([]);
   };
 
   const handleBusinessTypeChange = (e) => {
     const name = e.target.value;
-    const bt = businessTypes.find(
-      (b) => b.businessTypeName === name
-    );
-
-    console.log("🏢 Selected Business Type:", name, "ID:", bt?.businessTypeId);
-
     setSelectedBusinessTypeName(name);
-    setSelectedBusinessTypeId(bt ? bt.businessTypeId : null);
+
+    const bt = businessTypes.find((b) => b.businessTypeName === name);
+    const btId = bt ? (typeof bt.businessTypeId === "number" ? bt.businessTypeId : Number(bt.businessTypeId)) : "";
+    setSelectedBusinessType(btId);
+
+    // reset campus selection
     setSelectedCampus("");
+    setSelectedCampusId(null);
     setCampuses([]);
+    setCampusList([]);
   };
 
   const handleCampusChange = (e) => {
-    console.log("🏫 Selected Campus:", e.target.value);
-    setSelectedCampus(e.target.value);
+    const name = e.target.value;
+    setSelectedCampus(name);
+
+    // find campus object and set id
+    const campusObj = campuses.find(
+      (c) =>
+        (c.cmpsName && c.cmpsName === name) ||
+        (c.name && c.name === name) ||
+        (c.campusName && c.campusName === name)
+    );
+    setSelectedCampusId(campusObj ? (campusObj.cmpsId ?? campusObj.id ?? campusObj.campusId ?? null) : null);
   };
 
   const handleCheckEmployees = () => {
-    console.log("➡️ Navigating with:", {
-      cityId: selectedLocationId,
-      businessTypeId: selectedBusinessTypeId,
-      campus: selectedCampus,
-    });
+  console.log("🚀 Navigating with campusId:", selectedCampusId);
 
-    navigate("/scopes/employee/campus-flow-popup/campusflowpage", {
-      state: {
-        cityId: selectedLocationId,
-        businessTypeId: selectedBusinessTypeId,
-        campus: selectedCampus,
-      },
-    });
-  };
+  // 🔐 persist campusId
+  sessionStorage.setItem("campusId", selectedCampusId);
+
+  navigate("/scopes/employee/campus-flow-popup/campusflowpage", {
+    state: {
+      campusId: selectedCampusId,
+    },
+  });
+};
+
 
   // -------------------- UI --------------------
   return (
     <div className={styles.popupContainer}>
       {/* Header */}
       <div className={styles.header}>
-        <img
-          src={backArrow}
-          alt="Back"
-          className={styles.backIcon}
-          onClick={() => navigate(-1)}
-        />
+        <img src={backArrow} alt="Back" className={styles.backIcon} onClick={() => navigate(-1)} />
         <h2 className={styles.title}>Campus Flow</h2>
       </div>
 
       {/* Body */}
       <div className={styles.content}>
         {/* Location */}
-        <Dropdown
-          dropdownname="Location"
-          name="Location"
-          results={cities.map((c) => c.name)}
-          value={selectedLocation}
-          onChange={handleLocationChange}
-        />
+        <Dropdown dropdownname="Location" name="Location" results={locationList} value={selectedLocation} onChange={handleLocationChange} />
+        {citiesError && (
+          <div style={{ color: "#b00020", marginTop: 8 }}>
+            {citiesError}{" "}
+            <button type="button" onClick={() => fetchCities()} style={{ marginLeft: 8 }}>
+              Retry
+            </button>
+          </div>
+        )}
 
-        {/* Business Type */}
+        {/* Business Type (API) */}
         <Dropdown
           dropdownname="Business Type"
           name="Business Type"
           results={businessTypes.map((bt) => bt.businessTypeName)}
           value={selectedBusinessTypeName}
           onChange={handleBusinessTypeChange}
-          disabled={!selectedLocation}
+          disabled={loadingBusinessTypes}
         />
 
         {/* Campus */}
         <Dropdown
           dropdownname="Campus"
           name="Campus"
-          results={campuses.map(
-            (c) => c.name || c.campusName || ""
-          )}
+          results={campusList}
           value={selectedCampus}
           onChange={handleCampusChange}
-          disabled={!selectedBusinessTypeId}
+          disabled={loadingCampuses || campusList.length === 0}
         />
 
         {/* Button */}
@@ -174,11 +222,7 @@ const CampusFlowPopup = () => {
             onClick={handleCheckEmployees}
             variant="primary"
             width="199px"
-            // disabled={
-            //   !selectedLocationId ||
-            //   !selectedBusinessTypeId ||
-            //   !selectedCampus
-            // }
+            disabled={!selectedLocationId || !selectedBusinessType || !selectedCampusId}
           />
         </div>
       </div>

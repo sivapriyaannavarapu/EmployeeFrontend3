@@ -1,13 +1,19 @@
-import CamnpusFlowImage from "../../components/CampusFlow/CampusFlowProfileComponent/CamnpusFlowImage";
-import CampusFlowProfileLeft from "../../components/CampusFlow/CampusFlowProfileComponent/CampusFlowProfleLeft";
+import React from "react";
 import styles from "./CampusFlowProfileContanier.module.css";
 
-const CampusFlowProfileContainer = () => {
-    return(
-        <div className={styles.Campus_profile_container}>
-            <CamnpusFlowImage/>
-            <CampusFlowProfileLeft/>
-        </div>
-    );
-}
+import CampusFlowProfileLeft from "../../components/CampusFlow/CampusFlowProfileComponent/CampusFlowProfleLeft";
+import CamnpusFlowImage from "../../components/CampusFlow/CampusFlowProfileComponent/CamnpusFlowImage";
+
+const CampusFlowProfileContainer = ({ profile }) => {
+  if (!profile) return null;
+
+  return (
+    <div className={styles.Campus_profile_container}>
+      <CamnpusFlowImage profile={profile} />
+      <CampusFlowProfileLeft profile={profile} />
+    </div>
+  );
+};
+
+
 export default CampusFlowProfileContainer;

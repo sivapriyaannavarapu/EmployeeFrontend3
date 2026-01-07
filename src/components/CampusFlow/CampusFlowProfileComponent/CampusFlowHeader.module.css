@@ -2,25 +2,35 @@
   display: flex;
   flex-direction: row;
   gap:18px;
+  width:550px;
 }
 
-.employeeProfile{
-  height:190px;
-  width:150px;
-  /* border-radius: 90%; */
-  /* border:1px solid #0c0c0c; */
-   /* padding:5px; */
+.employeeProfile {
+  height: 190px;
+  width: 200px;
+  overflow: hidden;        /* 🔑 prevents overflow */
+  border-radius: 9px;      /* optional, matches image */
 }
-.emp_img{
-  height:188px;
-  width:141px;
-  border-radius: 9px;
+
+.emp_img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;       /* 🔑 makes image fit perfectly */
+  display: block;
 }
+
 .infoSection {
   display: flex;
   flex-direction: column;
   gap:10px;
 }
+
+.infoSection .name{
+  font-size: 16px;
+  font-weight: 700;
+  width:100%;
+}
+
 .empId span {
   font-weight: 600;
   color: #333;
@@ -37,6 +47,12 @@
   font-size: 12px;
   font-weight: 600;
   gap: 12px;
+}
+
+.detail {
+  display: flex;
+  align-items: center; /* Keeps icon and text on the same horizontal line */
+  white-space: nowrap; /* Prevents text from wrapping within the segment */
 }
 .actions {
   display: flex;

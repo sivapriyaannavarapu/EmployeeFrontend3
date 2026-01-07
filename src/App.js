@@ -101,7 +101,7 @@ function AppWrapper() {
   }
 >
   {/* DEFAULT SUBTAB */}
-     <Route index element={<Navigate to="academics" replace />} />
+     <Route index element={<div>Select a department</div>} />
 
   {/* 🔥 ONE route for all tabs */}
   <Route path=":department" element={<CampusFlowBioDataCard />} />

@@ -1,7 +1,7 @@
 .infoGrid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 18px 56px;
+  gap: 18px 32px;
   width: 100%;
   margin-top: 12px;
   color: #222;

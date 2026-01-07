@@ -1,6 +1,7 @@
 .wrapper {
   background: #ffffff;
   padding: 8px 12px;
+  border:1px solid #CACACA;
 }
 
 /* Top row */
@@ -45,7 +46,7 @@
 
 /* Hover effect */
 .tab:hover {
-  background: #3425FF;      /* light gray hover */
+  background: #3425FF;
   color:#ffffff;
 }
 

@@ -30,4 +30,34 @@ export const campusFlowApi = {
       throw err;
     }
   },
+
+  getCampusProfile: async (campusId) => {
+    const res = await axios.get(
+      `${BASE_URL}/campus-profile/${campusId}`
+    );
+    return res;
+  },
+
+  getManagedByEmployees: async (campusId) => {
+  try {
+    const res = await axios.get(
+      `${BASE_URL}/byCampus/${campusId}`
+    );
+    return res;
+  } catch (err) {
+    throw err;
+  }
+},
+
+getAllDepartments: async () => {
+  return axios.get(`${BASE_URL}/alldepartments`);
+},
+
+getEmployeesByDepartment: async (departmentId, campusId) => {
+  return axios.get(
+    `${BASE_URL}/getemployees/${departmentId}/${campusId}`
+  );
+},
+
+
 };

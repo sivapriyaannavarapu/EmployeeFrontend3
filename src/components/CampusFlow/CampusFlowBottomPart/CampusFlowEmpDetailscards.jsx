@@ -1,148 +1,144 @@
-import React from "react";
-import { useParams } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { useParams, useLocation } from "react-router-dom";
 import styles from "../CampusFlowBottomPart/CampusFlowEmpDetailsCard.module.css";
 
-// icons
 import rightDividerIcon from "assets/Family/dividerRightImg.svg";
 import leftDividerIcon from "assets/Family/dividerLeftImg.svg";
 import profileIcon from "assets/Family/profile.svg";
 import EmployeeDetailsCard from "widgets/EmployeeDetailsCard/EmployeeDetailsCard";
 
-/**
- * STATIC DATA PER DEPARTMENT
- * (Later this will be replaced by API calls)
- */
-const employeeDataByDepartment = {
-  academics: Array.from({ length: 8 }, () => ({
-    name: "Academic Employee",
-    emp_id: "EMP ID: ACD 1001",
-    role: "Professor",
-    phoneNumber: "9876543210",
-    email: "academics@company.com",
-  })),
+import { campusFlowApi } from "../../../api/campusflow/campusflow";
 
-  management: Array.from({ length: 8 }, () => ({
-    name: "Management Employee",
-    emp_id: "EMP ID: MGT 2001",
-    role: "Manager",
-    phoneNumber: "9876501111",
-    email: "management@company.com",
-  })),
-
-  "finance-accounts": Array.from({ length: 8 }, () => ({
-    name: "Finance Employee",
-    emp_id: "EMP ID: FIN 3001",
-    role: "Accountant",
-    phoneNumber: "9876502222",
-    email: "finance@company.com",
-  })),
-
-  marketing: Array.from({ length: 8 }, () => ({
-    name: "Marketing Employee",
-    emp_id: "EMP ID: MKT 4001",
-    role: "Marketing Executive",
-    phoneNumber: "9876503333",
-    email: "marketing@company.com",
-  })),
-
-  operations: Array.from({ length: 8 }, () => ({
-    name: "Operations Employee",
-    emp_id: "EMP ID: OPS 5001",
-    role: "Operations Lead",
-    phoneNumber: "9876504444",
-    email: "operations@company.com",
-  })),
-
-  "personal-admin": Array.from({ length: 8 }, () => ({
-    name: "Admin Employee",
-    emp_id: "EMP ID: ADM 6001",
-    role: "Admin Officer",
-    phoneNumber: "9876505555",
-    email: "admin@company.com",
-  })),
-
-  "purchase-logistics": Array.from({ length: 8 }, () => ({
-    name: "Logistics Employee",
-    emp_id: "EMP ID: LOG 7001",
-    role: "Logistics Manager",
-    phoneNumber: "9876506666",
-    email: "logistics@company.com",
-  })),
-
-  it: Array.from({ length: 8 }, () => ({
-    name: "IT Employee",
-    emp_id: "EMP ID: IT 8001",
-    role: "Software Engineer",
-    phoneNumber: "9876507777",
-    email: "it@company.com",
-  })),
-
-  legal: Array.from({ length: 8 }, () => ({
-    name: "Legal Employee",
-    emp_id: "EMP ID: LEG 9001",
-    role: "Legal Advisor",
-    phoneNumber: "9876508888",
-    email: "legal@company.com",
-  })),
-
-  hr: Array.from({ length: 8 }, () => ({
-    name: "HR Employee",
-    emp_id: "EMP ID: HR 10001",
-    role: "HR Executive",
-    phoneNumber: "9876509999",
-    email: "hr@company.com",
-  })),
-
-  sales: Array.from({ length: 8 }, () => ({
-    name: "Sales Employee",
-    emp_id: "EMP ID: SAL 11001",
-    role: "Sales Executive",
-    phoneNumber: "9876510000",
-    email: "sales@company.com",
-  })),
-
-  "academic-analytics": Array.from({ length: 8 }, () => ({
-    name: "Analytics Employee",
-    emp_id: "EMP ID: ANA 12001",
-    role: "Data Analyst",
-    phoneNumber: "9876511111",
-    email: "analytics@company.com",
-  })),
-};
+/* 🔹 PAGINATION CONFIG (FIGMA MATCH) */
+const PAGE_SIZE = 8;
+const PAGE_WINDOW = 2;
 
 const CampusFlowBioDataCard = () => {
   const { department } = useParams();
+  const location = useLocation();
+  const campusId =
+    location.state?.campusId || sessionStorage.getItem("campusId");
 
-  // Fallback to academics if invalid or missing department
-  const employeeList =
-    employeeDataByDepartment[department] ||
-    employeeDataByDepartment.academics;
+  const [employees, setEmployees] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState(1);
+
+  /* 🔹 FETCH EMPLOYEES */
+  useEffect(() => {
+    if (!department || !campusId) return;
+
+    const fetchEmployees = async () => {
+      setLoading(true);
+      setPage(1); // reset page when department changes
+      try {
+        const res = await campusFlowApi.getEmployeesByDepartment(
+          department,
+          campusId
+        );
+        setEmployees(Array.isArray(res.data) ? res.data : []);
+      } catch (err) {
+        console.error("❌ Employees API error", err);
+        setEmployees([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEmployees();
+  }, [department, campusId]);
+
+  /* 🔹 TOTALS */
+  const totalEntries = employees.length;
+  const totalPages = Math.ceil(totalEntries / PAGE_SIZE);
+
+  /* 🔹 CURRENT PAGE DATA */
+  const startIndex = (page - 1) * PAGE_SIZE;
+  const endIndex = startIndex + PAGE_SIZE;
+  const pageData = employees.slice(startIndex, endIndex);
+
+  /* 🔹 ENTRY RANGE */
+  const fromEntry = totalEntries === 0 ? 0 : startIndex + 1;
+  const toEntry = Math.min(endIndex, totalEntries);
+
+  /* 🔹 PAGE WINDOW (1-2, 3-4...) */
+  const windowStart =
+    Math.floor((page - 1) / PAGE_WINDOW) * PAGE_WINDOW + 1;
+  const windowEnd = Math.min(
+    windowStart + PAGE_WINDOW - 1,
+    totalPages
+  );
 
   return (
     <div className={styles.wrapper}>
-      <div className={styles.cardGrid}>
-        {employeeList.map((emp, index) => (
-          <EmployeeDetailsCard
-            key={index}
-            titleLable="Employee Name"
-            name={emp.name}
-            emp_id={emp.emp_id}
-            role={emp.role}
-            profileIcon={profileIcon}
-            leftDividerIcon={leftDividerIcon}
-            rightDividerIcon={rightDividerIcon}
-            phoneNumber={emp.phoneNumber}
-            email={emp.email}
-          />
-        ))}
+      {/* Grid area is always present to avoid layout jumps */}
+      <div
+        className={styles.cardGrid}
+        aria-live="polite"
+        role="region"
+      >
+        {loading && (
+          // simple placeholders to preserve layout while loading
+          Array.from({ length: 8 }).map((_, idx) => (
+            <div key={`skeleton-${idx}`} style={{ minHeight: 120 }}>
+              <div style={{
+                background: "#f4f4f6",
+                height: "120px",
+                borderRadius: 8
+              }} />
+            </div>
+          ))
+        )}
+
+        {!loading && employees.length === 0 && (
+          <div className={styles.noData}>No employees in this department</div>
+        )}
+
+        {!loading && employees.length > 0 && (
+          pageData.map((emp) => (
+            <EmployeeDetailsCard
+              key={emp.empId}
+              titleLable="Employee Name"
+              name={emp.empName}
+              emp_id={`EMP ID: ${emp.empId}`}
+              role={emp.designationName}
+              profileIcon={profileIcon}
+              leftDividerIcon={leftDividerIcon}
+              rightDividerIcon={rightDividerIcon}
+              phoneNumber={emp.mobileNo}
+              email={emp.email}
+            />
+          ))
+        )}
       </div>
 
-      {/* Pagination footer (static for now) */}
+      {/* PAGINATION */}
       <div className={styles.footer}>
-        <span>Showing 1 to 8 of 54 Entries</span>
-        <div className={styles.pagination}>
-          <button className={styles.prev}>Prev</button>
-          <button className={styles.next}>Next</button>
+        <span>
+          Showing {fromEntry} to {toEntry} of {totalEntries} Entries
+        </span>
+
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <span className={styles.pageRange}>
+            {windowStart}-{windowEnd} of {totalPages}
+          </span>
+
+          <div className={styles.pagination}>
+            <button
+              className={styles.prev}
+              disabled={page === 1}
+              onClick={() => setPage((p) => Math.max(p - 1, 1))}
+            >
+              Prev
+            </button>
+
+            <button
+              className={styles.next}
+              disabled={page === totalPages}
+              onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
+            >
+              Next
+            </button>
+          </div>
         </div>
       </div>
     </div>

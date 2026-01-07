@@ -1,64 +1,98 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import Styles from "../CampusFlowMiddlePart/CampusFlowMiddle.module.css";
+
 import EmployeeProfile from "../../../assets/campusFlowIcons/EmployeeDesignationProfile.svg";
 import badge from "../../../assets/campusFlowIcons/BadgeIcon.svg";
 import EmployeeDesignationCard from "widgets/EmployeeDesignationCard/EmployeeDesignationCard";
 
+import { campusFlowApi } from "../../../api/campusflow/campusflow";
+
+// 🔹 Utility to format designation nicely
+const formatDesignation = (text = "") =>
+  text
+    .toLowerCase()
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+
 const CampusFlowMiddle = () => {
+  const location = useLocation();
+  const campusId =
+    location.state?.campusId || sessionStorage.getItem("campusId");
+
+  const [employees, setEmployees] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!campusId) return;
+
+    const fetchManagedBy = async () => {
+      setLoading(true);
+      try {
+        const res = await campusFlowApi.getManagedByEmployees(campusId);
+        console.log("✅ Managed By response:", res.data);
+
+        setEmployees(Array.isArray(res.data) ? res.data : []);
+      } catch (err) {
+        console.error("❌ Managed By API error", err);
+        setEmployees([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchManagedBy();
+  }, [campusId]);
+
+  const BORDER_COLORS = [
+  "#FF7125", // orange
+  "#70B228", // green
+  "#AB28B2", // purple
+  "#B27628", // pink
+  "#B22874", // blue
+  "#5A5D10", // yellow
+  "#17709D", // teal
+];
+
+
   return (
     <div className={Styles.CampusContainer}>
       <div className={Styles.heading}>Managed By</div>
-      <div className={Styles.EmployeeCardContainer}>
-        <EmployeeDesignationCard
-          image={EmployeeProfile}
-          employeeId="87918"
-          name="Venkat Boppana"
-          gender="Male"
-          age={45}
-          designation="Executive Dean"
-          designationIcon={badge}
-          onCall={() => console.log("Call clicked")}
-          onMail={() => console.log("Mail clicked")}
-        />
-        <EmployeeDesignationCard
-          image={EmployeeProfile}
-          employeeId="87918"
-          name="Venkat Boppana"
-          gender="Male"
-          age={45}
-          designation="Principal"
-          designationIcon={badge}
 
-          subject="Maths 1A"
-          onCall={() => console.log("Call")}
-          onMail={() => console.log("Mail")}
-        />
-        <EmployeeDesignationCard
-          image={EmployeeProfile}
-          employeeId="87918"
-          name="Venkat Boppana"
-          gender="Male"
-          age={45}
-          designation="Executive Dean"
-          designationIcon={badge}
+      {/* 🔹 Horizontal Scroll Wrapper (NO CSS FILE CHANGE) */}
+      <div className={Styles.scrollWrapper}>
+        <div className={Styles.EmployeeCardContainer}>
+          {loading && <p>Loading employees…</p>}
 
-          onCall={() => console.log("Call clicked")}
-          onMail={() => console.log("Mail clicked")}
-        />
-        <EmployeeDesignationCard
-          image={EmployeeProfile}
-          employeeId="87918"
-          name="Venkat Boppana"
-          gender="Male"
-          age={45}
-          designation="Principal"
-          designationIcon={badge}
+          {!loading && employees.length === 0 && (
+            <p>No managed employees found</p>
+          )}
 
-          subject="Maths 1A"
-          onCall={() => console.log("Call")}
-          onMail={() => console.log("Mail")}
-        />
-        
+{employees.map((emp, index) => (
+  <div key={emp.empId} style={{ flexShrink: 0 }}>
+    <EmployeeDesignationCard
+      image={EmployeeProfile}
+      employeeId={emp.empId}
+      name={emp.empName}
+      gender={emp.genderName}
+      age={emp.age || ""}
+      designation={formatDesignation(emp.designationName)}
+      designationIcon={badge}
+      subject={
+        emp.subjectsTaught && emp.subjectsTaught.length > 0
+          ? emp.subjectsTaught.join(", ")
+          : ""
+      }
+      phoneNumber={emp.mobileNo}
+      email={emp.email}
+      onCall={() => console.log("📞 Call:", emp.mobileNo)}
+      onMail={() => console.log("✉️ Mail:", emp.email)}
+      borderColor={BORDER_COLORS[index % BORDER_COLORS.length]} // ✅ MAGIC
+    />
+  </div>
+))}
+
+
+        </div>
       </div>
     </div>
   );
