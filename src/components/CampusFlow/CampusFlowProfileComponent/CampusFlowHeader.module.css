@@ -46,7 +46,7 @@
   align-items: center;  
   font-size: 12px;
   font-weight: 600;
-  gap: 12px;
+  gap: 10px;
 }
 
 .detail {
@@ -54,6 +54,7 @@
   align-items: center; /* Keeps icon and text on the same horizontal line */
   white-space: nowrap; /* Prevents text from wrapping within the segment */
 }
+
 .actions {
   display: flex;
   align-items: center;

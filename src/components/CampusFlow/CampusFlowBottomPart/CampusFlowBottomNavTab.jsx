@@ -5,6 +5,7 @@ import { campusFlowApi } from "../../../api/campusflow/campusflow";
 
 import SearchBox from "widgets/Searchbox/Searchbox";
 import { searchicon } from "assets/onboarding_status_table/searchicon";
+import { formatLabel } from "../../../utils/textUtils";
 
 const CampusFlowBottomNavTab = () => {
   const [departments, setDepartments] = useState([]);
@@ -43,9 +44,9 @@ const CampusFlowBottomNavTab = () => {
       });
   }, [navigate, location]);
 
-  // 🔍 filter tabs by search text
+  // 🔍 filter tabs by search text (compare normalized display)
   const filteredDepartments = departments.filter((dept) =>
-    dept.name.toLowerCase().includes(search.toLowerCase())
+    formatLabel(dept.name).toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -68,15 +69,19 @@ const CampusFlowBottomNavTab = () => {
       <div className={styles.tabs}>
         {filteredDepartments.map((dept) => (
           <NavLink
-            key={dept.id}
-            to={dept.id.toString()} // departmentId used in route
-            state={location.state} // preserve any existing state like campusId
-            className={({ isActive }) =>
-              `${styles.tab} ${isActive ? styles.activeTab : ""}`
-            }
-          >
-            {dept.name}
-          </NavLink>
+  key={dept.id}
+  to={dept.id.toString()}
+  state={{
+    ...location.state,
+    departmentName: formatLabel(dept.name), // ✅ ADD THIS
+  }}
+  className={({ isActive }) =>
+    `${styles.tab} ${isActive ? styles.activeTab : ""}`
+  }
+>
+  {formatLabel(dept.name)}
+</NavLink>
+
         ))}
       </div>
     </div>

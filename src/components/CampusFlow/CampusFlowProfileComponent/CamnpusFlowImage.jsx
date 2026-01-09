@@ -6,11 +6,11 @@ import callIconOutLine from "assets/RightSideInformation Icons/callIconOutLine.s
 import dotsIcon from "assets/EmployeeProfileCrad/dotsicon.svg";
 import mailIconOutline from "assets/RightSideInformation Icons/MailIconOutLine.svg";
 import CampusImage from "../../../assets/campusFlowIcons/CampusImage.svg";
-import gendericon from "assets/EmployeeProfileCrad/Gendericon.svg";
 import maleicon from "../../../assets/campusFlowIcons/maleicon.svg";
 import femaleicon from "../../../assets/campusFlowIcons/femaleicon.svg";
 
 import { Tooltip } from "@mui/material";
+import { normalizeLabel } from "../../../utils/labelutils.js";
 
 const tooltipProps = {
   arrow: true,
@@ -68,32 +68,29 @@ const CamnpusFlowImage = ({ profile }) => {
           <span>{profile.cmpsCode ?? "-"}</span>
         </p>
 
-        <h3 className={styles.name}>{profile.cmpsName ?? "-"}</h3>
+        {/* ✅ NORMALIZED */}
+        <h3 className={styles.name}>
+          {normalizeLabel(profile.cmpsName ?? "-")}
+        </h3>
 
         <div className={styles.details}>
           <span className={styles.detail}>
-            <img
-              src={femaleicon}
-              alt="Education Type"
-              className={styles.icon}
-            />
-            <img
-              src={maleicon}
-              alt="Education Type"
-              className={styles.icon}
-            />
-            {profile.educateTypeName ?? "-"}
+            <img src={femaleicon} alt="Female" className={styles.icon} />
+            <img src={maleicon} alt="Male" className={styles.icon} />
+            {normalizeLabel(profile.educateTypeName ?? "-")}
           </span>
-          <span className={styles.detail}>• {profile.cmpsType ?? "-"}</span>
+          <span className={styles.detail}>
+            •&nbsp;&nbsp;&nbsp;{normalizeLabel(profile.cmpsType ?? "-")}
+          </span>
         </div>
 
         <p className={styles.location}>
-          {address || "Address not available"}
+          {normalizeLabel(address) || "Address not available"}
         </p>
 
         <div className={styles.actions}>
           <button className={styles.designation}>
-            {profile.orgName ?? "Organization"}
+            {normalizeLabel(profile.orgName ?? "Organization")}
           </button>
 
           {/* PHONE */}
@@ -102,11 +99,7 @@ const CamnpusFlowImage = ({ profile }) => {
             title={
               phoneNumber ? (
                 <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                  <img
-                    src={callIconOutLine}
-                    alt="Phone"
-                    style={{ width: "14px", height: "14px" }}
-                  />
+                  <img src={callIconOutLine} alt="Phone" style={{ width: 14 }} />
                   <span>{phoneNumber}</span>
                 </div>
               ) : (
@@ -125,11 +118,7 @@ const CamnpusFlowImage = ({ profile }) => {
             title={
               email ? (
                 <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                  <img
-                    src={mailIconOutline}
-                    alt="Email"
-                    style={{ width: "14px", height: "14px" }}
-                  />
+                  <img src={mailIconOutline} alt="Email" style={{ width: 14 }} />
                   <span>{email}</span>
                 </div>
               ) : (

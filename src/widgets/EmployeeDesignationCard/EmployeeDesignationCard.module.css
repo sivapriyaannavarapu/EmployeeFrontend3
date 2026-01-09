@@ -97,12 +97,14 @@
 
 
 .subject {
-  border: 1px solid #6bbf3d;
   color: #2f7d1f;
   padding: 6px 14px;
-  border-radius: 18px;
   font-size: 12px;
   font-weight: 500;
+  border-radius: 16px;
+border: 1px solid #5C9E1F;
+background: #F8FFF2;
+box-shadow: 0 0 5.3px 0 rgba(0, 0, 0, 0.25);
 }
 
 /* Actions */

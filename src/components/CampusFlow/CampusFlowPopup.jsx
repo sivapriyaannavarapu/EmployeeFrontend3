@@ -7,12 +7,13 @@ import Button from "widgets/Button/Button";
 import rightarrow from "assets/managermappingsearch/rightarrow";
 
 import { campusFlowApi } from "../../api/campusflow/campusflow";
+import { formatLabel } from "../../utils/textUtils";
 
 const CampusFlowPopup = () => {
   const navigate = useNavigate();
 
   // -------------------- STATE --------------------
-  const [selectedLocation, setSelectedLocation] = useState(""); // city name (display)
+  const [selectedLocation, setSelectedLocation] = useState(""); // display name
   const [selectedLocationId, setSelectedLocationId] = useState(null); // city id (API)
 
   const [selectedBusinessType, setSelectedBusinessType] = useState(""); // businessTypeId (number/string)
@@ -26,10 +27,10 @@ const CampusFlowPopup = () => {
 
   const [cities, setCities] = useState([]); // full city objects
   const [citiesError, setCitiesError] = useState(null);
-  const [locationList, setLocationList] = useState([]); // array of city names
+  const [locationList, setLocationList] = useState([]); // array of formatted city names
 
   const [campuses, setCampuses] = useState([]); // full campus objects
-  const [campusList, setCampusList] = useState([]); // array of campus names
+  const [campusList, setCampusList] = useState([]); // array of formatted campus names
   const [loadingCampuses, setLoadingCampuses] = useState(false);
 
   // -------------------- API CALLS --------------------
@@ -59,8 +60,9 @@ const CampusFlowPopup = () => {
     try {
       const res = await campusFlowApi.getCities();
       const data = res?.data ?? [];
-      setCities(Array.isArray(data) ? data : []);
-      setLocationList(Array.isArray(data) ? data.map((c) => c.name) : []);
+      const cityObjects = Array.isArray(data) ? data : [];
+      setCities(cityObjects);
+      setLocationList(cityObjects.map((c) => formatLabel(c.name)));
       console.log("Fetched cities:", data);
     } catch (err) {
       const serverPayload = err?.response?.data ?? err?.message ?? err;
@@ -96,7 +98,7 @@ const CampusFlowPopup = () => {
         setCampuses(items);
 
         const names = items
-          .map((c) => c.cmpsName ?? c.name ?? c.campusName ?? c.campus ?? "")
+          .map((c) => formatLabel(c.cmpsName ?? c.name ?? c.campusName ?? c.campus ?? ""))
           .filter(Boolean);
         setCampusList(names);
       } catch (err) {
@@ -113,11 +115,11 @@ const CampusFlowPopup = () => {
 
   // -------------------- HANDLERS --------------------
   const handleLocationChange = (e) => {
-    const name = e.target.value;
-    setSelectedLocation(name);
+    const displayName = e.target.value;
+    setSelectedLocation(displayName);
 
-    // find and store the city id
-    const city = cities.find((c) => c.name === name);
+    // find and store the city id using normalized label matching
+    const city = cities.find((c) => formatLabel(c.name) === displayName);
     setSelectedLocationId(city ? city.id ?? city.cityId ?? null : null);
 
     // reset dependent selections
@@ -133,7 +135,7 @@ const CampusFlowPopup = () => {
     const name = e.target.value;
     setSelectedBusinessTypeName(name);
 
-    const bt = businessTypes.find((b) => b.businessTypeName === name);
+    const bt = businessTypes.find((b) => formatLabel(b.businessTypeName) === name);
     const btId = bt ? (typeof bt.businessTypeId === "number" ? bt.businessTypeId : Number(bt.businessTypeId)) : "";
     setSelectedBusinessType(btId);
 
@@ -148,29 +150,28 @@ const CampusFlowPopup = () => {
     const name = e.target.value;
     setSelectedCampus(name);
 
-    // find campus object and set id
+    // find campus object and set id by normalized matching
     const campusObj = campuses.find(
-      (c) =>
-        (c.cmpsName && c.cmpsName === name) ||
-        (c.name && c.name === name) ||
-        (c.campusName && c.campusName === name)
+      (c) => formatLabel(c.cmpsName ?? c.name ?? c.campusName ?? c.campus ?? "") === name
     );
     setSelectedCampusId(campusObj ? (campusObj.cmpsId ?? campusObj.id ?? campusObj.campusId ?? null) : null);
   };
 
   const handleCheckEmployees = () => {
-  console.log("🚀 Navigating with campusId:", selectedCampusId);
+    // optional: persist campusId in sessionStorage for other areas
+    if (selectedCampusId) sessionStorage.setItem("campusId", String(selectedCampusId));
 
-  // 🔐 persist campusId
-  sessionStorage.setItem("campusId", selectedCampusId);
-
-  navigate("/scopes/employee/campus-flow-popup/campusflowpage", {
-    state: {
-      campusId: selectedCampusId,
-    },
-  });
-};
-
+    navigate("/scopes/employee/campus-flow-popup/campusflowpage", {
+      state: {
+        location: selectedLocation,           // name (display)
+        locationId: selectedLocationId,       // city id
+        businessType: selectedBusinessType,   // id
+        businessTypeName: selectedBusinessTypeName,
+        campus: selectedCampus,               // name
+        campusId: selectedCampusId,           // id (CampusFlowContainer expects this)
+      },
+    });
+  };
 
   // -------------------- UI --------------------
   return (
@@ -198,7 +199,7 @@ const CampusFlowPopup = () => {
         <Dropdown
           dropdownname="Business Type"
           name="Business Type"
-          results={businessTypes.map((bt) => bt.businessTypeName)}
+          results={businessTypes.map((bt) => formatLabel(bt.businessTypeName))}
           value={selectedBusinessTypeName}
           onChange={handleBusinessTypeChange}
           disabled={loadingBusinessTypes}
